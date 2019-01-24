@@ -2,6 +2,7 @@
 #include <opencv2/core/core.hpp>
 #include <ceres/ceres.h>
 #include <chrono>
+#include<fstream>
 
 using namespace std;
 
@@ -23,9 +24,14 @@ struct CURVE_FITTING_COST
 
 int main ( int argc, char** argv )
 {
+    ofstream fout("random-result.txt");
+    if(!fout.is_open()){
+        cerr<<"can not open file\n";
+        exit(1);
+    }
     double a=1.0, b=2.0, c=1.0;         // 真实参数值
     int N=100;                          // 数据点
-    double w_sigma=1.0;                 // 噪声Sigma值
+    double w_sigma=1.0;                 // 噪声Sigma值 p~N(0,sigma^2)
     cv::RNG rng;                        // OpenCV随机数产生器
     double abc[3] = {0,0,0};            // abc参数的估计值
 
@@ -34,12 +40,13 @@ int main ( int argc, char** argv )
     cout<<"generating data: "<<endl;
     for ( int i=0; i<N; i++ )
     {
-        double x = i/100.0;
+        double x = (double)i/N;
         x_data.push_back ( x );
         y_data.push_back (
             exp ( a*x*x + b*x + c ) + rng.gaussian ( w_sigma )
         );
-        cout<<x_data[i]<<" "<<y_data[i]<<endl;
+        fout<<x_data[i]<<" "<<y_data[i]<<"\n";
+        cout<<x_data[i]<<"\t"<<y_data[i]<<endl;
     }
 
     // 构建最小二乘问题
@@ -71,9 +78,12 @@ int main ( int argc, char** argv )
     // 输出结果
     cout<<summary.BriefReport() <<endl;
     cout<<"estimated a,b,c = ";
-    for ( auto a:abc ) cout<<a<<" ";
+    for (auto i:abc){
+        cout<<i<<" ";
+        fout<<i<<" ";
+    }
     cout<<endl;
-
+    fout.close();
     return 0;
 }
 
